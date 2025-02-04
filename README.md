@@ -10,6 +10,7 @@ System is based on Python and AWS and do the following:
 * use settings to assign specific day activities for specific day for every kid
 * update kids calendar
 * update kids settings
+* support schedule for regular updates
 
 It's pretty developer oriented now and all changes can be done via config files and Python code (both logic and deployment that's defined in AWS CDK)
 
