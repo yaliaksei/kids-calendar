@@ -12,6 +12,7 @@ from aws_cdk import aws_events_targets as targets
 from aws_cdk import aws_stepfunctions as sfn
 from aws_cdk import aws_stepfunctions_tasks as tasks
 from aws_cdk import aws_lambda_python_alpha
+from .settings import settings
 
 class KidsCalendarStack(Stack):
 
@@ -30,7 +31,12 @@ class KidsCalendarStack(Stack):
         bucket = s3.Bucket(
             self, "kids-calendar",
             versioned=True,
-            block_public_access=s3.BlockPublicAccess.BLOCK_ALL
+            block_public_access=s3.BlockPublicAccess(
+                block_public_acls=True,
+                block_public_policy=False,  # Allow public bucket policies
+                ignore_public_acls=True,
+                restrict_public_buckets=False  # Allow public access through bucket policies
+            )
         )
 
         # Add a bucket policy for public read access to specific objects
@@ -52,7 +58,7 @@ class KidsCalendarStack(Stack):
             index="download_lambda.py",
             environment={
                 "BUCKET_NAME": bucket.bucket_name,
-                "SCHOOL_CALENDAR_URL": "https://www.dasd.org/calendar/calendar_372.ics",
+                "SCHOOL_CALENDAR_URL": settings['school_calendar_url']
             },
         )
 

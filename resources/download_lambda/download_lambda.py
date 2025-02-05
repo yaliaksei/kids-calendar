@@ -17,7 +17,7 @@ def lambda_handler(event, context):
 
     # download file fron the url and store it in the bucket
     url = os.environ['SCHOOL_CALENDAR_URL']
-    file_name = "disrict_calendar.ics"
+    file_name = "district_calendar.ics"
 
     try:
         # Download file from URL
