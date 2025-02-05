@@ -12,6 +12,8 @@ from aws_cdk import aws_events_targets as targets
 from aws_cdk import aws_stepfunctions as sfn
 from aws_cdk import aws_stepfunctions_tasks as tasks
 from aws_cdk import aws_lambda_python_alpha
+from aws_cdk import Duration
+
 from .settings import settings
 
 class KidsCalendarStack(Stack):
@@ -56,6 +58,7 @@ class KidsCalendarStack(Stack):
             handler="lambda_handler",
             entry="./resources/download_lambda",
             index="download_lambda.py",
+            timeout=Duration.seconds(30),
             environment={
                 "BUCKET_NAME": bucket.bucket_name,
                 "SCHOOL_CALENDAR_URL": settings['school_calendar_url']
@@ -69,6 +72,7 @@ class KidsCalendarStack(Stack):
             handler="lambda_handler",
             entry="./resources/process_lambda",
             index="process_lambda.py",
+            timeout=Duration.seconds(30),
             environment={
                 "BUCKET_NAME": bucket.bucket_name,
             },
@@ -81,6 +85,7 @@ class KidsCalendarStack(Stack):
             handler="lambda_handler",
             entry="./resources/delete_lambda",
             index="delete_lambda.py",
+            timeout=Duration.seconds(30),
             environment={
                 "BUCKET_NAME": bucket.bucket_name,
             },
