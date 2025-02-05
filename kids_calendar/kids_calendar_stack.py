@@ -30,14 +30,19 @@ class KidsCalendarStack(Stack):
         bucket = s3.Bucket(
             self, "kids-calendar",
             versioned=True,
-            block_public_access=s3.BlockPublicAccess(
-            block_public_acls=False,
-            block_public_policy=False,  # This allows public bucket policies
-            ignore_public_acls=False,
-            restrict_public_buckets=False
-    )
-)
+            block_public_access=s3.BlockPublicAccess.BLOCK_ALL
+        )
 
+        # Add a bucket policy for public read access to specific objects
+        bucket.add_to_resource_policy(
+            iam.PolicyStatement(
+                effect=iam.Effect.ALLOW,
+                actions=["s3:GetObject"],
+                principals=[iam.AnyPrincipal()],
+                resources=[bucket.arn_for_objects("district_calendar.ics")]
+            )
+        )
+      
         # create lambda function to download file from predefined URL to this bucket
         lambda_function_download = aws_lambda_python_alpha.PythonFunction(
             self, "kids-calendar-lambda-download",
@@ -47,6 +52,7 @@ class KidsCalendarStack(Stack):
             index="download_lambda.py",
             environment={
                 "BUCKET_NAME": bucket.bucket_name,
+                "SCHOOL_CALENDAR_URL": "https://www.dasd.org/calendar/calendar_372.ics",
             },
         )
 
@@ -74,7 +80,24 @@ class KidsCalendarStack(Stack):
             },
         )
 
-        bucket.grant_read_write(lambda_function_download)
+        # bucket.grant_read_write(lambda_function_download)
+        lambda_function_download.add_to_role_policy(
+            iam.PolicyStatement(
+                effect=iam.Effect.ALLOW,
+                actions=[
+                    "s3:GetObject",
+                    "s3:PutObject",
+                    "s3:PutObjectAcl",
+                    "s3:ListBucket",
+                    "s3:DeleteObject"
+                ],
+                resources=[
+                    bucket.bucket_arn,
+                    f"{bucket.bucket_arn}/*"
+                ]
+            )
+        )
+                
         bucket.grant_read_write(lambda_function_process)
         bucket.grant_read_write(lambda_function_delete)
 
