@@ -27,7 +27,16 @@ class KidsCalendarStack(Stack):
         # )
 
         # create S3 bucket
-        bucket = s3.Bucket(self, "kids-calendar", versioned=True)
+        bucket = s3.Bucket(
+            self, "kids-calendar",
+            versioned=True,
+            block_public_access=s3.BlockPublicAccess(
+            block_public_acls=False,
+            block_public_policy=False,  # This allows public bucket policies
+            ignore_public_acls=False,
+            restrict_public_buckets=False
+    )
+)
 
         # create lambda function to download file from predefined URL to this bucket
         lambda_function_download = aws_lambda_python_alpha.PythonFunction(
@@ -64,6 +73,10 @@ class KidsCalendarStack(Stack):
                 "BUCKET_NAME": bucket.bucket_name,
             },
         )
+
+        bucket.grant_read_write(lambda_function_download)
+        bucket.grant_read_write(lambda_function_process)
+        bucket.grant_read_write(lambda_function_delete)
 
         # define tast for state machine
         lambda_function_download_task = tasks.LambdaInvoke(
