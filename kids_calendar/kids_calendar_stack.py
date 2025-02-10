@@ -21,14 +21,6 @@ class KidsCalendarStack(Stack):
     def __init__(self, scope: Construct, construct_id: str, **kwargs) -> None:
         super().__init__(scope, construct_id, **kwargs)
 
-        # The code that defines your stack goes here
-
-        # example resource
-        # queue = sqs.Queue(
-        #     self, "KidsCalendarQueue",
-        #     visibility_timeout=Duration.seconds(300),
-        # )
-
         # create S3 bucket
         bucket = s3.Bucket(
             self, "kids-calendar",
@@ -61,7 +53,6 @@ class KidsCalendarStack(Stack):
             timeout=Duration.seconds(30),
             environment={
                 "BUCKET_NAME": bucket.bucket_name,
-                "SCHOOL_CALENDAR_URL": settings['school_calendar_url']
             },
         )
 
@@ -115,17 +106,26 @@ class KidsCalendarStack(Stack):
         # define tast for state machine
         lambda_function_download_task = tasks.LambdaInvoke(
             self, "kids-calendar-lambda-download-task",
-            lambda_function=lambda_function_download
+            lambda_function=lambda_function_download,
+            payload=sfn.TaskInput.from_object({
+                "kids": settings["kids"]
+                })
         )
 
         lambda_function_process_task = tasks.LambdaInvoke(
             self, "kids-calendar-lambda-process-task",
             lambda_function=lambda_function_process,
+            payload=sfn.TaskInput.from_object({
+                "kids": settings["kids"]
+                })
         )
 
         lambda_function_delete_task = tasks.LambdaInvoke(
             self, "kids-calendar-lambda-delete-task",
             lambda_function=lambda_function_delete,
+            payload=sfn.TaskInput.from_object({
+                "kids": settings["kids"]
+                })
         )
 
 

@@ -15,24 +15,25 @@ def lambda_handler(event, context):
     # get the bucket name from Environment
     bucket_name = os.environ['BUCKET_NAME']
 
-    # download file fron the url and store it in the bucket
-    url = os.environ['SCHOOL_CALENDAR_URL']
-    file_name = "district_calendar.ics"
+    kids_data = event.get('kids')
 
     try:
-        # Download file from URL
-        response = requests.get(url)
-        response.raise_for_status()  # Raises an HTTPError for bad responses
+        for kid in kids_data:
+            # Download file from URL
+            url = kid['calendar_url']
+            file_name = kid['name'].lower() + "_school_calendar.ics"
+            response = requests.get(url)
+            response.raise_for_status()  # Raises an HTTPError for bad responses
 
-        # Upload directly to S3 from memory
-        s3 = boto3.client('s3')
-        s3.put_object(
-            Bucket=bucket_name,
-            Key=file_name,
-            Body=response.content
-        )
-        
-        logger.info('File {} downloaded and stored in bucket {}'.format(file_name, bucket_name))
+            # Upload directly to S3 from memory
+            s3 = boto3.client('s3')
+            s3.put_object(
+                Bucket=bucket_name,
+                Key=file_name,
+                Body=response.content
+            )
+            
+            logger.info('File {} downloaded and stored in bucket {}'.format(file_name, bucket_name))
         
         return {
             'statusCode': 200,

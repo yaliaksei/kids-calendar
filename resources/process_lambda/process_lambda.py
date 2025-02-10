@@ -10,50 +10,43 @@ logger.setLevel(logging.INFO)
 def lambda_handler(event, context):
     # read district_calendar.ics from S3 bucket
     bucket_name = os.environ['BUCKET_NAME']
-    file_name = "district_calendar.ics"
     s3 = boto3.resource('s3')
+    kids_data = event.get('kids')
 
-    obj = s3.Object(bucket_name, file_name)
-    body = obj.get()['Body'].read().decode('utf-8') 
-    logger.info('read calendar file from S3 bucket')
+    for kid in kids_data:
+        file_name = kid['name'].lower() + "_school_calendar.ics"
+        logger.info('file name: ' + file_name)
 
-    # load calendar from body
-    cal = icalendar.Calendar.from_ical(body)
+        obj = s3.Object(bucket_name, file_name)
+        body = obj.get()['Body'].read().decode('utf-8') 
+        logger.info('read calendar file from S3 bucket')
 
-    # cal = icalendar.Calendar.from_ical(open('district_calendar.ics').read())
+        # load calendar from body
+        cal = icalendar.Calendar.from_ical(body)
 
-    # create a new calendar
-    family_encores = icalendar.Calendar()
-    family_encores.add('prodid', '-//Family Encores//EN')
-    family_encores.add('version', '2.0')
+        # cal = icalendar.Calendar.from_ical(open('district_calendar.ics').read())
 
-    mark_encore = {
-        'A' : 'Music',
-        'B' : 'Art',
-        'C' : 'Gym',
-        'D' : 'iDesign',
-        'E' : 'Gym',
-        'F' : 'Library'
-    }
+        # create a new calendar
+        kid_encores = icalendar.Calendar()
+        kid_encores.add('prodid', '-//Family Encores//EN')
+        kid_encores.add('version', '2.0')
+       
+        # iterate over calendar events
+        for event in cal.walk('vevent'):    
+            school_event = event
 
-    sofya_encore = {
-        'A' : 'Gym, Health',
-        'B' : 'Spanish, Engineering',
-        'C' : 'Art, Band',
-        'D' : 'Gym, Health',
-        'E' : 'Spanish, Engineering',
-        'F' : 'Art, Band'
-    }
+            # family_event['SUMMARY'] = 'Sofya: ' + sofya_encore[event.get('summary')] + ' | Mark: ' + mark_encore[event.get('summary')] 
+            encore_day = event.get('summary')
 
-    # iterate over calendar events
-    for event in cal.walk('vevent'):    
-        family_event = event
-        family_event['SUMMARY'] = 'Sofya: ' + sofya_encore[event.get('summary')] + ' | Mark: ' + mark_encore[event.get('summary')] 
+            for encore in kid['encores']:
+                if encore['day'] == encore_day:
+                    # print("Today's encore is: " + encore['classes'])
+                    school_event['SUMMARY'] = kid['name'] + ': ' + encore['classes']
 
-        family_encores.add_component(event)
+            kid_encores.add_component(school_event)
 
-    # write family_encores calendar to S3 bucket
-    s3 = boto3.resource('s3')
-    obj = s3.Object(bucket_name, 'kids_encores.ics')
-    obj.put(Body=family_encores.to_ical())
-    logger.info('wrote family encores calendar to S3 bucket')
+        # write kid_encores calendar to S3 bucket
+        s3 = boto3.resource('s3')
+        obj = s3.Object(bucket_name, kid['name'].lower() + '_encores.ics')
+        obj.put(Body=kid_encores.to_ical())
+        logger.info('Wrote family encores calendar to S3 bucket')
