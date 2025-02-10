@@ -41,7 +41,7 @@ def lambda_handler(event, context):
             for encore in kid['encores']:
                 if encore['day'] == encore_day:
                     # print("Today's encore is: " + encore['classes'])
-                    school_event['SUMMARY'] = kid['name'] + ': ' + encore['classes']
+                    school_event['SUMMARY'] = encore['day'] + ': ' + encore['classes']
 
             kid_encores.add_component(school_event)
 
